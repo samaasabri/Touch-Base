@@ -40,8 +40,7 @@ A voice-driven project assistant built on Google ADK and Gemini Live. It connect
 1. Clone the repository:
 
 ```bash
-git clone <repo-url>
-cd Voice-Virtual-Assistant
+git clone https://github.com/samaasabri/Touch-Base.git
 ```
 
 2. Create and activate a virtual environment:
@@ -81,7 +80,7 @@ The following files are **not committed** to the repository and must be created 
 
 Create a `.env` file in the project root.
 
-**Location:** `Voice-Virtual-Assistant/.env`
+**Location:** `.env`
 
 **Example:**
 
