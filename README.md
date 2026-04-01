@@ -2,6 +2,12 @@
 
 A voice-driven project assistant built on Google ADK and Gemini Live. It connects an internal knowledge base (PDF RAG via ChromaDB) with Google Calendar (CRUD + scheduling) and a team directory (fuzzy name-to-email lookup). Users interact through a web UI supporting both text chat and real-time bidirectional voice.
 
+
+
+https://github.com/user-attachments/assets/fa9c85e4-8415-4b34-940f-1c32baa7864e
+
+
+
 > For a deep dive into the architecture, see [APP_ARCHITECTURE.md](APP_ARCHITECTURE.md).
 
 ---
