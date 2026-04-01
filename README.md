@@ -244,7 +244,6 @@ Then open your browser to `http://localhost:8000`. The web UI supports both text
 ## Project Structure
 
 ```
-Voice-Virtual-Assistant/
 ├── .env                          # Environment variables (not committed)
 ├── team_directory.json           # Team name/email directory (committed)
 ├── requirements.txt              # Python dependencies
