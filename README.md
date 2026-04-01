@@ -18,9 +18,10 @@ A voice-driven project assistant built on Google ADK and Gemini Live. It connect
    - [Company Documents (RAG)](#5-company-documents-rag)
 4. [Calendar OAuth Setup](#calendar-oauth-setup)
 5. [Ingest Documents](#ingest-documents)
-6. [Running the Application](#running-the-application)
-7. [Project Structure](#project-structure)
-8. [Troubleshooting](#troubleshooting)
+6. [RAG Pipeline](#rag-pipeline)
+7. [Running the Application](#running-the-application)
+8. [Project Structure](#project-structure)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -28,10 +29,11 @@ A voice-driven project assistant built on Google ADK and Gemini Live. It connect
 
 - Python 3.11+
 - A Google Cloud project with the following APIs enabled:
-  - **Vertex AI API**
+  - **Vertex AI API** (Gemini + embeddings)
   - **Google Calendar API**
 - A service account with the `roles/aiplatform.user` role
 - OAuth 2.0 Desktop credentials for Calendar access
+- PDF documents to populate the knowledge base (optional but recommended)
 
 ---
 
@@ -40,7 +42,8 @@ A voice-driven project assistant built on Google ADK and Gemini Live. It connect
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/samaasabri/Touch-Base.git
+git clone <repo-url>
+cd <repo-name>
 ```
 
 2. Create and activate a virtual environment:
@@ -74,13 +77,13 @@ pip install -r requirements.txt
 
 ## Configuration
 
-The following files are **not committed** to the repository and must be created locally. Each section below shows the expected location, format, and an example.
+The `secrets/` directory contains example template files showing the expected format for each credential. Copy them, remove the `.example` extension, and fill in your real values. The remaining configuration files must be created locally as described below.
 
 ### 1. Environment Variables (`.env`)
 
 Create a `.env` file in the project root.
 
-**Location:** `.env`
+**Location:** `.env` (project root)
 
 **Example:**
 
@@ -111,6 +114,7 @@ GOOGLE_APPLICATION_CREDENTIALS=secrets/service_account_credentials.json
 Used for Vertex AI authentication (embeddings + Gemini).
 
 **Location:** `secrets/service_account_credentials.json`
+**Template:** `secrets/service_account_credentials.example.json`
 
 **How to create:**
 
@@ -118,53 +122,21 @@ Used for Vertex AI authentication (embeddings + Gemini).
 2. Create a service account (e.g. `voice-assistant-sa`)
 3. Grant the role: `roles/aiplatform.user`
 4. Go to the **Keys** tab, click **Add Key > Create new key > JSON**
-5. Download the file and place it at `secrets/service_account_credentials.json`
-
-**Example structure:**
-
-```json
-{
-  "type": "service_account",
-  "project_id": "your-gcp-project-id",
-  "private_key_id": "key-id-here",
-  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
-  "client_email": "voice-assistant-sa@your-gcp-project-id.iam.gserviceaccount.com",
-  "client_id": "123456789",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/..."
-}
-```
+5. Download the file and save it as `secrets/service_account_credentials.json`
 
 ### 3. OAuth Client Credentials
 
 Used for the Google Calendar OAuth 2.0 Desktop flow.
 
 **Location:** `secrets/credentials.json`
+**Template:** `secrets/credentials.example.json`
 
 **How to create:**
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), go to **APIs & Services > Credentials**
 2. Click **Create Credentials > OAuth client ID**
 3. Application type: **Desktop application**
-4. Download the JSON file and place it at `secrets/credentials.json`
-
-**Example structure:**
-
-```json
-{
-  "installed": {
-    "client_id": "123456789-abcdef.apps.googleusercontent.com",
-    "project_id": "your-gcp-project-id",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_secret": "GOCSPX-your-client-secret",
-    "redirect_uris": ["http://localhost"]
-  }
-}
-```
+4. Download the JSON file and save it as `secrets/credentials.json`
 
 ### 4. Team Directory
 
@@ -215,17 +187,57 @@ This will:
 
 ## Ingest Documents
 
-After placing PDFs in `company_docs/`, run the ingestion script:
+After placing PDFs in `company_docs/`, run the ingestion script to build the ChromaDB vector store:
 
 ```bash
 python scripts/ingest_docs.py
 ```
 
-This generates:
-- `chroma_db/` — the ChromaDB vector store (used at runtime by the `search_project_docs` tool)
-- `ingestion_cache.json` — hash cache for incremental ingestion (only new/changed files are re-processed)
+The script parses each PDF with Docling, chunks the text, generates embeddings via Vertex AI (`text-embedding-004`), and stores everything in ChromaDB. It produces:
 
-Both are gitignored and generated locally.
+- `chroma_db/` — the persisted ChromaDB vector store (used at runtime by the `search_project_docs` tool)
+- `ingestion_cache.json` — MD5 hash cache for incremental ingestion (only new or changed files are re-processed)
+
+Both are gitignored and generated locally. Re-run the script any time you add or update documents.
+
+> See [RAG Pipeline](#rag-pipeline) for a detailed breakdown of the ingestion and search stack.
+
+---
+
+## RAG Pipeline
+
+The document search feature (`search_project_docs` tool) is backed by a full RAG pipeline:
+
+```
+PDF files → Docling (parsing) → LangChain (chunking) → Vertex AI Embeddings → ChromaDB (vector store)
+```
+
+### Ingestion Stack
+
+| Stage | Library | Detail |
+|-------|---------|--------|
+| **Parsing** | [Docling](https://github.com/DS4SD/docling) | Converts PDFs to clean Markdown, preserving structure |
+| **Chunking** | LangChain `RecursiveCharacterTextSplitter` | 1 000-char chunks with 100-char overlap |
+| **Embeddings** | Vertex AI `text-embedding-004` | Google's latest text embedding model via `langchain-google-vertexai` |
+| **Vector Store** | [ChromaDB](https://www.trychroma.com/) | Persistent local vector database stored in `chroma_db/` |
+| **Caching** | MD5 hash cache (`ingestion_cache.json`) | Only new or changed files are re-processed on subsequent runs |
+
+### Search at Runtime
+
+At query time, the `ChromaDocsRepository` loads the persisted ChromaDB collection and supports two retrieval strategies:
+
+- **MMR (Maximal Marginal Relevance)** — enabled by default. Balances relevance with diversity to avoid returning near-duplicate chunks. Fetches `3 × top_k` candidates and selects the best `top_k`.
+- **Similarity search** — pure cosine-similarity ranking when MMR is disabled.
+
+An optional `score_threshold` parameter filters out low-confidence results.
+
+### Architecture
+
+The RAG feature follows the same clean-architecture pattern as the rest of the app:
+
+```
+DocsRepository (ABC)  →  ChromaDocsRepository (infrastructure)  →  DocsService (application)  →  search_project_docs (tool)
+```
 
 ---
 
@@ -250,9 +262,11 @@ Then open your browser to `http://localhost:8000`. The web UI supports both text
 ├── APP_ARCHITECTURE.md           # Detailed architecture reference
 ├── README.md                     # This file
 │
-├── secrets/                      # Credentials (not committed)
-│   ├── credentials.json          # Google OAuth client credentials
-│   └── service_account_credentials.json  # Vertex AI service account key
+├── secrets/                      # Credentials directory
+│   ├── credentials.example.json                  # OAuth template (committed)
+│   ├── credentials.json                          # Your OAuth credentials (not committed)
+│   ├── service_account_credentials.example.json  # Service account template (committed)
+│   └── service_account_credentials.json          # Your service account key (not committed)
 │
 ├── company_docs/                 # PDF corpus for RAG (not committed)
 │   └── *.pdf
@@ -317,6 +331,6 @@ Check that:
 
 ### Security reminders
 
-- Never commit files in `secrets/` — they are gitignored
+- Only the `.example.json` templates in `secrets/` are committed — the actual credential files are gitignored
 - Never share your OAuth token (`calendar_token.json`)
 - The `.env` file contains project configuration and is gitignored
