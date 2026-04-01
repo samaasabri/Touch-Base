@@ -1,17 +1,17 @@
 # Touch Base — Voice Virtual Assistant
 
-A voice-driven project assistant built on Google ADK and Gemini Live. It connects an internal knowledge base (PDF RAG via ChromaDB) with Google Calendar (CRUD + scheduling) and a team directory (fuzzy name-to-email lookup). Users interact through a web UI supporting both text chat and real-time bidirectional voice.
-
-
-[![Watch Presentation](https://github.com/user-attachments/assets/aa200f7f-2240-4d61-8164-419ae7fb7b03)](./Touch%20Base.pdf)
-
-> 💡 **Click the image above** to open the full project presentation (PDF).
+A voice-driven project assistant built on Google ADK and Gemini Live. It connects an internal knowledge base (PDF RAG via ChromaDB) with Google Calendar (CRUD + scheduling) and a team directory.
 
 https://github.com/user-attachments/assets/fa9c85e4-8415-4b34-940f-1c32baa7864e
 
+---
 
+### 📊 Project Overview
+Click the preview below to view the full design deck and project goals.
 
-> For a deep dive into the architecture, see [APP_ARCHITECTURE.md](APP_ARCHITECTURE.md).
+[![Watch Presentation](https://github.com/user-attachments/assets/aa200f7f-2240-4d61-8164-419ae7fb7b03)](./Touch%20Base.pdf)
+
+> 💡 **Deep Dive:** For a technical breakdown of the engine, see [APP_ARCHITECTURE.md](APP_ARCHITECTURE.md).
 
 ---
 
