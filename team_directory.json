@@ -1,0 +1,7 @@
+{
+  "team": [
+    { "name": "Sahar Sabry", "email": "sahar50sabry@gmail.com" },
+    { "name": "Sara Ahmed", "email": "sara.ahmed@example.com" },
+    { "name": "Mohamed Ali", "email": "mohamed.ali@example.com" }
+  ]
+}

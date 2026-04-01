@@ -1,0 +1,9 @@
+.env
+__pycache__/
+.venv/
+.vscode/
+.pytest_cache/
+chroma_db/
+*.pyc
+secrets/
+ingestion_cache.json

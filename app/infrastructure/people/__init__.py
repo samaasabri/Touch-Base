@@ -1,0 +1,1 @@
+"""People infrastructure adapter."""

@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Base</title>
+    <script src="/static/js/app.js" type="module"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #efefef;
+        --surface: #ffffff;
+        --ink: #0a0a0a;
+        --muted: #6b6b6b;
+        --border: #d4d4d4;
+        --agent-bubble: #e8e8e8;
+        --agent-bubble-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.06);
+        --radius-pill: 9999px;
+        --radius-msg: 12px;
+        --radius-agent-bubble: 20px;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: var(--bg);
+        color: var(--ink);
+        line-height: 1.55;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .page {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: clamp(2rem, 6vw, 4rem) clamp(1.25rem, 4vw, 2rem) 2rem;
+      }
+
+      .hero {
+        margin-bottom: clamp(2.5rem, 8vw, 4rem);
+      }
+
+      .hero h1 {
+        font-size: clamp(2.35rem, 5.75vw, 3.15rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: var(--ink);
+        margin-bottom: 0.75rem;
+      }
+
+      .hero-credit {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 1.25rem;
+        padding: 0;
+        border: none;
+        background: none;
+      }
+
+      .service-endpoint {
+        font-size: 0.8125rem;
+        color: var(--muted);
+        margin: 0 0 1.25rem;
+        line-height: 1.5;
+      }
+
+      .service-endpoint-prefix {
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.6875rem;
+        margin-right: 0.35rem;
+      }
+
+      #service-endpoint-label {
+        font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+        font-size: 0.8125rem;
+        color: var(--ink);
+        word-break: break-all;
+      }
+
+      .tagline {
+        font-size: 0.9375rem;
+        color: var(--muted);
+        max-width: 28rem;
+        line-height: 1.65;
+      }
+
+      .chat-container {
+        background: transparent;
+        margin-bottom: 1.5rem;
+      }
+
+      #messages {
+        height: min(380px, 42vh);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0 0 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        scroll-behavior: smooth;
+      }
+
+      #messages > p {
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-msg);
+        max-width: 88%;
+        word-wrap: break-word;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+        unicode-bidi: isolate;
+      }
+
+      .agent-message-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        align-self: flex-start;
+        width: 100%;
+        max-width: 100%;
+        animation: fadeIn 0.25s ease-out;
+      }
+
+      .agent-avatar {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--ink);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      }
+
+      .agent-avatar svg {
+        width: 18px;
+        height: 18px;
+        display: block;
+      }
+
+      .agent-message-row .agent-message {
+        flex: 0 1 auto;
+        min-width: 0;
+        margin: 0;
+        width: fit-content;
+        max-width: min(100%, 520px);
+        padding: 1rem 1.2rem;
+        border-radius: var(--radius-agent-bubble);
+        background: var(--surface);
+        color: var(--ink);
+        box-shadow: var(--agent-bubble-shadow);
+        word-wrap: break-word;
+        font-size: 0.9375rem;
+        line-height: 1.55;
+        unicode-bidi: isolate;
+      }
+
+      .audio-enabled .agent-message-row .agent-message {
+        padding-left: 1.2rem;
+      }
+
+      .audio-icon {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin-right: 0.5rem;
+        vertical-align: middle;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230a0a0a' stroke-width='2'%3E%3Cpath d='M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Cline x1='12' y1='19' x2='12' y2='23'/%3E%3Cline x1='8' y1='23' x2='16' y2='23'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+      }
+
+      .user-message {
+        background-color: var(--ink);
+        color: var(--surface);
+        align-self: flex-end;
+        margin-left: auto;
+        border-bottom-right-radius: 4px;
+        animation: fadeIn 0.25s ease-out;
+      }
+
+      #messageForm {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        padding: 0.35rem 0.35rem 0.35rem 1.25rem;
+        background: var(--surface);
+        border-radius: var(--radius-pill);
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(0, 0, 0, 0.04);
+      }
+
+      #message {
+        flex: 1;
+        min-width: 0;
+        padding: 0.85rem 0.5rem 0.85rem 0;
+        border: none;
+        background: transparent;
+        font-size: 0.9375rem;
+        font-family: inherit;
+        color: var(--ink);
+        outline: none;
+      }
+
+      #message::placeholder {
+        color: #9ca3af;
+      }
+
+      .composer-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex-shrink: 0;
+      }
+
+      .icon-btn {
+        width: 44px;
+        height: 44px;
+        border: none;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s ease, opacity 0.15s ease;
+      }
+
+      .icon-btn:hover:not(:disabled) {
+        background: var(--agent-bubble);
+      }
+
+      .icon-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      .icon-btn svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      #sendButton {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        padding: 0 1.15rem 0 1.25rem;
+        min-height: 44px;
+        border: none;
+        border-radius: var(--radius-pill);
+        background: var(--ink);
+        color: var(--surface);
+        font-family: inherit;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: opacity 0.15s ease, transform 0.12s ease;
+      }
+
+      #sendButton svg {
+        width: 15px;
+        height: 15px;
+        stroke: var(--surface);
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      #sendButton:hover:not(:disabled) {
+        opacity: 0.92;
+      }
+
+      #sendButton:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+
+      #sendButton:disabled {
+        background: #a3a3a3;
+        cursor: not-allowed;
+        opacity: 0.85;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1.25rem;
+        gap: 1.25rem;
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .status-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: var(--border);
+        flex-shrink: 0;
+      }
+
+      .status-dot.connected {
+        background-color: var(--ink);
+      }
+
+      .status-dot.recording {
+        background-color: var(--ink);
+      }
+
+      .recording-active {
+        position: relative;
+      }
+
+      @keyframes pulse-recording {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.45;
+          transform: scale(1.15);
+        }
+      }
+
+      @media (max-width: 600px) {
+        #messages {
+          height: min(300px, 38vh);
+        }
+
+        #messageForm {
+          padding-left: 1rem;
+        }
+
+        #sendButton {
+          padding: 0 0.85rem;
+        }
+
+        #sendButton .send-label {
+          display: none;
+        }
+
+        #sendButton {
+          min-width: 44px;
+          padding: 0;
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      #agent-typing-row {
+        order: 999;
+        align-self: flex-start;
+        width: 100%;
+        max-width: 100%;
+        opacity: 0;
+        visibility: hidden;
+        max-height: 0;
+        overflow: hidden;
+        margin: 0;
+        padding-bottom: 0;
+        transition: opacity 0.2s ease, visibility 0.2s ease, max-height 0.2s ease,
+          margin 0.2s ease, padding-bottom 0.2s ease;
+      }
+
+      /* overflow: visible when open — otherwise box-shadow + bottom radius look "cut off" */
+      #agent-typing-row.visible {
+        opacity: 1;
+        visibility: visible;
+        max-height: 220px;
+        margin: 0;
+        padding-bottom: 14px;
+        overflow: visible;
+      }
+
+      .typing-indicator {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.2rem;
+        min-height: 48px;
+        background: var(--surface);
+        border-radius: var(--radius-agent-bubble);
+        box-shadow: var(--agent-bubble-shadow);
+        width: fit-content;
+        min-width: 72px;
+        gap: 5px;
+      }
+
+      .typing-indicator span {
+        height: 6px;
+        width: 6px;
+        background-color: var(--muted);
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .typing-indicator span:nth-child(1) {
+        animation: bounce 1.2s infinite 0.2s;
+      }
+
+      .typing-indicator span:nth-child(2) {
+        animation: bounce 1.2s infinite 0.4s;
+      }
+
+      .typing-indicator span:nth-child(3) {
+        animation: bounce 1.2s infinite 0.6s;
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-4px);
+        }
+      }
+    </style>
+  </head>
+
+  <body data-public-app-url="__PUBLIC_APP_URL__">
+    <div class="page">
+      <header class="hero">
+        <h1>Touch Base</h1>
+        <p class="hero-credit">Powered by Google ADK</p>
+        <p class="service-endpoint" aria-label="Application URL">
+          <span class="service-endpoint-prefix">Endpoint</span>
+          <span id="service-endpoint-label"></span>
+        </p>
+        <p class="tagline">
+          Access your unified knowledge base and schedule through a seamless editorial interface.
+        </p>
+      </header>
+
+      <div class="chat-container">
+        <div id="messages">
+          <div id="agent-typing-row" class="agent-message-row" aria-hidden="true">
+            <div class="agent-avatar" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 3" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 21" />
+                <path d="M8 21H3v-5" />
+              </svg>
+            </div>
+            <div id="typing-indicator" class="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+
+        <form id="messageForm" autocomplete="off">
+          <input
+            type="text"
+            id="message"
+            name="message"
+            placeholder="Ask about docs or your schedule..."
+            aria-label="Message"
+          />
+          <div class="composer-actions">
+            <button
+              type="button"
+              id="startAudioButton"
+              class="icon-btn"
+              aria-label="Enable voice input"
+              title="Enable voice"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              id="stopAudioButton"
+              class="icon-btn"
+              style="display: none"
+              aria-label="Stop voice input"
+              title="Stop voice"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="6" y="6" width="12" height="12" rx="1" />
+              </svg>
+            </button>
+            <button type="submit" id="sendButton" disabled>
+              <span class="send-label">Send</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="status-indicator">
+        <div class="status-item">
+          <div id="status-dot" class="status-dot" aria-hidden="true"></div>
+          <span id="connection-status">Connecting…</span>
+        </div>
+        <div class="status-item" id="recording-container" style="display: none">
+          <div
+            class="status-dot recording"
+            style="animation: pulse-recording 1.5s infinite"
+            aria-hidden="true"
+          ></div>
+          <span id="recording-status">Recording</span>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1 @@
+"""Docs infrastructure adapter."""
